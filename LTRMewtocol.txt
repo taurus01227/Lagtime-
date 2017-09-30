@@ -1,0 +1,25 @@
+Private Sub Command1_Click()
+
+    Dim Instring As String
+    ' Use COM2.
+    MSComm1.CommPort = 1
+    ' 9600 baud, odd parity, 8 data, and 1 stop bit.
+    MSComm1.Settings = "9600,O,8,1"
+    ' Tell the control to read entire buffer when Input
+    ' is used.
+    MSComm1.InputLen = 0
+    ' Open the port.
+    MSComm1.PortOpen = True
+    ' Send the attention command to the modem.
+    MSComm1.Output = "%01#WCSR00021**" + Chr$(13)
+    ' Wait for data to come back to the serial port.
+    Do
+    DoEvents
+    Loop Until MSComm1.InBufferCount >= 2
+    ' Read the "OK" response data in the serial port.
+    Instring = MSComm1.Input
+    txtLastRead.Text = Instring
+    ' Close the serial port.
+    MSComm1.PortOpen = False
+    
+    End Sub

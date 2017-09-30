@@ -1,0 +1,86 @@
+MEWTOCOL COMANDS TO BE USED :
+++++++++++++++++++++++++++++++++++
+
+1.
+SET Word unit (output, internal relay, data, timer/counter set/elapsed value)
+COMMAND: %01#WCC R0000 0002  E803  C800  9CFF ** Cr  
+--------------------------------------------------------------------------------------------------------------
+	  start address         1st value               3rd value 
+	 end address         2nd value
+			 (to set 3 words from WR0 to WR2)
+
+%01#WD D00100 00103   6400  C800  1027  18FC** Cr  
+		 (to set 4 words from DT100 to DT103)
+Note:	Element number must be expressed by 5 digits for this command.
+
+RESPONSE
+%01$WD BCC Cr
+
+
+2.
+READ Word unit (input, output, internal relay, data, timer/counter set/elapsed value)
+COMMAND: %01#RCC X0000 0004 ** Cr   (to read 5 words from WX0 to WX4)
+----------------------------------------------------------------------------------------------------------------
+
+%01#RD D00000 00010 ** Cr  (to read 11 words from DT0 to DT10)
+Note:	Element number must be expressed by 5 digits for this command.
+
+RESPONSE 	%01$RC 3412  7856  BC9A  F0DE  1234 BCC Cr
+                                                         WX0      WX1     WX2      WX3     WX4
+
+
+STEPS TO COMMUNICATE WITH PLC:
+++++++++++++++++++++++++++++++++++
+1. Write data (value in ASCII of number of coins to be dispensed) onto DT100
+
+	Code: ' Send the attention command to the PLC.
+                                  MSComm1.Output = "%01#WDD00100001003130**" + Chr$(13)
+	            	WDD - write data
+		00100 - DT00100
+		3130 - value 10 in ASCII
+
+2. Read & varify data (value in ASCII of number of coins to be dispensed) of DT101 & DT101, to confirm if the PLC receive the correct value
+
+	Code: ' Send the attention command to the PLC.
+                                  MSComm1.Output = "%01#RD0010100101**" + Chr$(13)
+	            	WDD - read data
+		00101 - DT00101
+		
+3. If confirmed PLC received correct data, turn on internal relay
+
+	Code: ' Send the attention command to the PLC.
+                                  MSComm1.Output = "%01#WCSR00031**" + Chr$(13)
+	            	WCSR - turn on internal relay
+		0003 - Internal Relay 3
+		1 - ON the relay, if 0 is to turn off the relay
+
+4. Read data (value in ASCII of "balance" of coins to be dispensed) of DT101 for 3-5 seconds;
+    if DT 101 doesnt turn into 0 (short change), read Internal Relay 101 status to confirm short change status.
+
+	Code: ' Send the attention command to the PLC.
+                                  MSComm1.Output = "%01#RD0010100101**" + Chr$(13)
+	            	RD - read data
+		00101 - DT00101
+		
+	Code: ' Send the attention command to the PLC.
+                                  MSComm1.Output = "%01#RCSR00101**" + Chr$(13)
+	            	RCSR - read internal relay contact
+	
+	           	RESPONSE 	%01$RC 1 BCC Cr
+		Command is sent to station 01 and  the PLC reads R101 (internal relay).
+		The RESPONSE shall be returned to the computer with either “1” (ON) or “0” (OFF). 
+
+5. If Internal Relay 101 response "1" (ON), then read DT101 to obtain the coin short change value. 
+
+6. Turn OFF the internal relay to reset the relay's state
+
+	Code: ' Send the attention command to the PLC.
+                                  MSComm1.Output = "%01#WCSR001010**" + Chr$(13)
+	            	WCSR - turn on internal relay
+		0101 - Internal Relay 101
+		0 is to turn off the relay
+
+		
+
+
+
